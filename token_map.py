@@ -1,7 +1,7 @@
 import pandas as pd
 import os
 from nbtext import make_network_name_graph, token_map, urn_concordance
-
+import requests
 
 def token_map_names(tmap): 
     return [
@@ -35,7 +35,7 @@ def names_to_token_map_file(wp, filename='', orient='column'):
     # if all ok go ahead
     
     table_names = dict()
-    print(wp)
+    #print(wp)
     tmap = token_map(wp)
     ##print(tmap)
     for (name, target) in tmap:
@@ -56,7 +56,7 @@ def names_to_token_map_file(wp, filename='', orient='column'):
     if filename.endswith('csv'):
         df.to_csv(filename)
     elif filename.endswith('xls'):
-        df.to_excel(filename, index = False)
+        df.to_excel(filename, index = orient == "row")
     else:
         rv = df
     return rv
@@ -94,8 +94,46 @@ def show_names(wp):
             else:
                 print("   ", ' '.join(x[0]) + ' - ' + str(x[1]))
         print()
-
+        
 def character_network(urn, token_map, names = None):
     if names == None:
         names = token_map_names(token_map)
     return make_network_name_graph(urn, names, tokenmap = token_map)
+
+from nbtext import names
+from collections import Counter
+
+def count_name_strings(urn, token_map, names=None):
+    """ return a count of the names in tokenmap"""
+    if names == None:
+        names = token_map_names(token_map)
+    
+    if isinstance(urn, list):
+        urn = urn[0]
+        
+    # tokens should be a list of list of tokens. If it is list of dicts pull out the keys (= tokens)   
+    #if isinstance(tokens[0], dict):
+    #    tokens = [list(x.keys()) for x in tokens]
+        
+    res = requests.post("https://api.nb.no/ngram/word_counts", json={'urn':urn, 'tokens':names, 'tokenmap':token_map})
+    #print(r.text)
+   
+    return pd.read_json(res.json()).sort_values(by=0, ascending = False)
+
+def corpus_names(corpus, ratio=0.5, cutoff = 10):
+    # check status of corpus if it is a frame or a list of list 
+    # for now assume it is a list of URNs
+    urn_names = dict()
+    for urn in corpus:
+        try:
+            urn_names[urn] = names(urn, ratio = ratio, cutoff = cutoff)
+        except:
+            print("Fikk ikke laget navn for:", urn)
+    return urn_names
+
+def combine_names(namedict):
+    total_names = [Counter(), Counter(), Counter(), Counter()]
+    for urn in namedict:
+        for i in range(4):
+            total_names[i] += namedict[urn][i]
+    return total_names

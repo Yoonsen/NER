@@ -3,3 +3,5 @@
 *.py
  Navnegrafer.ipynb
 *.py
+Geo/allCountries/allCountries.txt
+Geo/geo_norsk.json

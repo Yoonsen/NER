@@ -1,6 +1,7 @@
 import json
 import os
 import random
+from random import sample
 import numpy as np
 import numpy.random
 import re
@@ -174,8 +175,15 @@ def word_lemma(word):
 
 
 def word_freq(urn, words):
+    """ Find frequency of words within urn """
     params = {'urn':urn, 'words':words}
     r = requests.post("https://api.nb.no/ngram/freq", json=params)
+    return dict(r.json())
+
+def tot_freq(words):
+    """ Find total frequency of words """
+    params = {'words':words}
+    r = requests.post("https://api.nb.no/ngram/word_frequencies", json=params)
     return dict(r.json())
 
 def book_count(urns):
@@ -217,6 +225,7 @@ def pure_urn(data):
     Args:
         data: May be a list of URNs, a list of lists with URNs as their
             initial element, or a string of raw texts containing URNs
+            Any pandas dataframe or series. Urns must be in the first column of dataframe.
     Returns:
         List[str]: A list of URNs. Empty list if input is on the wrong
             format or contains no URNs
@@ -228,19 +237,21 @@ def pure_urn(data):
             korpus_def = []
         if isinstance(data[0], list):  # List of lists
             try:
-                korpus_def = [x[0] for x in data]
+                korpus_def = [str(x[0]) for x in data]
             except IndexError:
                 korpus_def = []
         else:  # Assume data is already a list of URNs
-            korpus_def = data
+            korpus_def = [str(int(x)) for x in data]
     elif isinstance(data, str):
-        korpus_def = urn_from_text(data)
+        korpus_def = [str(x) for x in urn_from_text(data)]
     elif isinstance(data, (int, np.integer)):
         korpus_def = [str(data)]    
     elif isinstance(data, pd.DataFrame):
-        korpus_def = list(data[data.columns[0]])
+        col = data.columns[0]
+        urns = pd.to_numeric(data[col])
+        korpus_def = [str(int(x)) for x in urns.dropna()]
     elif isinstance(data, pd.Series):
-        korpus_def = list(data)
+        korpus_def = [str(int(x)) for x in data.dropna()]
     return korpus_def
 
 ####  N-Grams from fulltext updated
@@ -839,6 +850,8 @@ def make_network_name_graph(urn, tokens, tokenmap=None, cutoff=2):
     G.add_weighted_edges_from([(x,y,z) for (x,y,z) in r.json() if z > cutoff and x != y])
     return G
 
+
+
 def token_convert_back(tokens, sep='_'):
     """ convert a list of tokens to string representation"""
     res = [tokens[0]]
@@ -1372,14 +1385,22 @@ def make_graph(words, lang='nob', cutoff=20, leaves=0):
     return G
 
 def urn_concordance(urns = None, word = None, size = 5, before = None, after = None ):
+    """ Find a concordance within a corpus as list of URNs. This is a wrapper for get_urnkonk """
+    
+    # exit if list of urns is empty
     if urns is None or word is None:
         return []
+    
+    # The URNs may be presented in different ways. 
+    urns = pure_urn(urns)
+    
+    # find values and feed everything to get_urnkonk
     frame = inspect.currentframe()
     args, _, _, values = inspect.getargvalues(frame)
     query = {i:values[i] for i in args if values[i] != None and i != 'word'}
     return get_urnkonk(word, query)
 
-from random import sample
+
 def konk(word, urns=None, before=5, after=5):
     if urns == None:
         print('URNer mangler')
@@ -1642,6 +1663,16 @@ def restore_metadata_from_excel(data):
     df = pd.DataFrame()
     try:
         df = pd.read_excel(data)
+        # From excel some stray rows with null values for urn may occur. Drop those.
+        indexNames = df[df[df.columns[0]].isnull()].index
+        df.drop(indexNames , inplace=True)
+        try:
+            urn = df.columns[0]
+            year = df.columns[2]
+            df = df.astype({urn: 'int64', year:'int'})
+            df = df.astype({urn: 'str'})
+        except:
+            True
     except:
         if not os.path.exists(data):
             print('filen {data} ble ikke funnet'.format(data=data))

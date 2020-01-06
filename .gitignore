@@ -5,3 +5,4 @@
 *.py
 Geo/allCountries/allCountries.txt
 Geo/geo_norsk.json
+Geo/.ipynb_checkpoints/Qgrid-checkpoint.ipynb

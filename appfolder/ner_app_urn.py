@@ -24,7 +24,7 @@ def get_corpus(freetext=None, title=None, from_year=1900, to_year=2020):
 
 @st.cache(suppress_st_warning=True, show_spinner = False)
 def get_ner(urn, model):
-    df = dh.NER(urn = urn, model = model).ner
+    df = dh.NER(urn = urn, model = model).ner.set_index('token')
     df_defined = True
     personer = df[df["ner"].str.contains("PER")] 
     steder = df[df['ner'].str.contains('LOC')]
@@ -40,7 +40,7 @@ def get_ner(urn, model):
 
 @st.cache(suppress_st_warning=True, show_spinner = False)
 def get_pos(urn, model):
-    df = dh.POS(urn = urn, model = model).pos
+    df = dh.POS(urn = urn, model = model).pos.set_index('token')
     df_defined = True
     noun = df[df.pos.str.contains('NOUN')]
     verb = df[df.pos.str.contains('VERB')]
@@ -75,9 +75,10 @@ st.set_page_config(layout="wide")
 head_col1,_,_,head_col2, head_col3 = st.columns(5)
 
 with head_col1:
-    st.title('NER')
+    st.title('Navn og steder')
 with head_col2:
-    st.markdown('Les mer om [Digital Humaniora - DH](https://nb.no/dh-lab) og [spaCy](https://spacy.io/models/nb). ')
+    st.markdown('Les mer om [Digital Humaniora - DH](https://nb.no/dh-lab)')
+    st.markdown('og språkmodellen i [spaCy](https://spacy.io/models/nb). ')
 with head_col3:
     image = Image.open("DHlab_logo_web_en_black.png")
     st.image(image)

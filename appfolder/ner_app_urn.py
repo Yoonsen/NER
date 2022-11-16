@@ -86,7 +86,7 @@ with head_col3:
 
 corpus_defined = False
 
-
+st.markdown("----")
 st.markdown("####  Definer en gruppe tekster fra URNer, korpus eller stikkord")
 
 icol1, icol2 = st.columns(2)

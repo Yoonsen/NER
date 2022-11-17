@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: navn-og-steder
-        image: gcr.io/norwegian-language-bank/navn-og-steder:f21e18a6-05ad-4299-94d0-fcf8de8f0995
+        image: gcr.io/norwegian-language-bank/navn-og-steder:feba507d-c072-4462-9da1-bc908ffbcade
         command: [ "/bin/bash" ]
         args: [ "-c", "streamlit run ner_app_urn.py --server.port 8501 --server.baseUrlPath /navn-og-steder --browser.gatherUsageStats=False"]
         ports:

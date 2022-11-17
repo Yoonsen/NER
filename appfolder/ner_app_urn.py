@@ -227,7 +227,7 @@ if choices != []:
                 st.dataframe(andre)
             
     if df_defined:
-        if st.download_button(f"Last ned data i excelformat til '{filename}'", to_excel(df),filename, help = "Åpnes i Excel eller tilsvarende"):
+        if st.download_button(f"Last ned data i excelformat til '{filename}'", to_excel(df.reset_index()),filename, help = "Åpnes i Excel eller tilsvarende"):
             True
 else:
     st.write("Her dukker det opp en tekstvelger så snart listen av tekster er definert")
